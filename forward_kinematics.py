@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 class RobotArm:
     def __init__(self, link_length=1.0):
@@ -71,6 +73,39 @@ class RobotArm:
         position = T[:3, 3]
         return position
 
+    def calculate_joint_positions(self, joint_angles):
+        """
+        Calculate the positions of all joints for visualization.
+        
+        Args:
+            joint_angles (list): List of 4 joint angles.
+            
+        Returns:
+            np.ndarray: Array of shape (5, 3) containing [x, y, z] for Base, J1, J2, J3, End-Effector.
+        """
+        if len(joint_angles) != 4:
+            raise ValueError("Expected 4 joint angles.")
+
+        j1, j2, j3, j4 = joint_angles
+        L = self.L
+        
+        dh_params = [
+            (j1, 0, L, np.pi/2),
+            (j2, 0, L, np.pi/2),
+            (j3, 0, L, np.pi/2),
+            (j4, 0, L, 0)
+        ]
+
+        T = np.eye(4)
+        positions = [T[:3, 3]] # Start with base at 0,0,0
+        
+        for params in dh_params:
+            T_i = self.dh_matrix(*params)
+            T = np.dot(T, T_i)
+            positions.append(T[:3, 3])
+            
+        return np.array(positions)
+
 def main():
     # Initialize robot with link length 1m
     robot = RobotArm(link_length=1.0)
@@ -96,6 +131,36 @@ def main():
             # Calculate position
             pos = robot.forward_kinematics(angles)
             print(f"End Effector Position (x, y, z): {pos}")
+            
+            # Visualization
+            print("Displaying plot... (Close the plot window to continue)")
+            joint_positions = robot.calculate_joint_positions(angles)
+            
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            
+            xs = joint_positions[:, 0]
+            ys = joint_positions[:, 1]
+            zs = joint_positions[:, 2]
+            
+            ax.plot(xs, ys, zs, '-o', label='Robot Arm', linewidth=2, markersize=6)
+            
+            # Plot origin
+            ax.scatter([0], [0], [0], color='r', s=50, label='Base')
+            
+            ax.set_xlabel('X (m)')
+            ax.set_ylabel('Y (m)')
+            ax.set_zlabel('Z (m)')
+            ax.set_title(f'Robot Arm Configuration\nAngles: {angles}')
+            
+            # Set consistent axis limits
+            limit = 4.0
+            ax.set_xlim(-limit, limit)
+            ax.set_ylim(-limit, limit)
+            ax.set_zlim(-limit, limit)
+            
+            ax.legend()
+            plt.show()
             
         except ValueError:
             print("Error: Invalid input. Please enter numbers only.")
