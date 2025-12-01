@@ -51,21 +51,6 @@ class RobotArm:
         j1, j2, j3, j4 = joint_angles
         L = self.L
 
-        # DH Parameters based on the description:
-        # "The axis of each joint is perpendicular to the previous joint."
-        # "The lengths of the links - 'L' is 1m each."
-        
-        # Assumptions made from diagram:
-        # Frame 0: Base
-        # Frame 1: After J1 rotation, translated by L along link 1. Axis Z1 perpendicular to Z0.
-        # Frame 2: After J2 rotation, translated by L along link 2. Axis Z2 perpendicular to Z1.
-        # Frame 3: After J3 rotation, translated by L along link 3. Axis Z3 perpendicular to Z2.
-        # Frame 4: After J4 rotation, translated by L along link 4. End effector.
-        
-        # DH Table (theta, d, a, alpha)
-        # Note: We convert angles to radians if they aren't already, but input is assumed radians.
-        # We use alternating 90 and -90 degrees for alpha to keep the arm somewhat "upright" in the diagrammatic sense,
-        # ensuring Z axes are perpendicular.
         
         dh_params = [
             (j1, 0, L, np.pi/2),  # Joint 1 to 2
@@ -87,29 +72,35 @@ class RobotArm:
         return position
 
 def main():
-    # Example usage
-    try:
-        # Initialize robot with link length 1m
-        robot = RobotArm(link_length=1.0)
+    # Initialize robot with link length 1m
+    robot = RobotArm(link_length=1.0)
+    
+    print("Forward Kinematics Calculator")
+    print("Enter 4 joint angles in radians separated by spaces (e.g., '0 1.57 0 0').")
+    print("Type 'exit' or 'quit' to stop.")
 
-        # Test Case 1: All zeros
-        # If all angles are zero, the arm should be extended.
-        angles_1 = [0, 0, 0, 0]
-        pos_1 = robot.forward_kinematics(angles_1)
-        print(f"Angles: {angles_1} -> End Effector Position: {pos_1}")
-
-        # Test Case 2: 90 degrees on first joint
-        angles_2 = [np.pi/2, 0, 0, 0]
-        pos_2 = robot.forward_kinematics(angles_2)
-        print(f"Angles: [90 deg, 0, 0, 0] -> End Effector Position: {pos_2}")
-        
-        # Test Case 3: Random configuration
-        angles_3 = [0.1, 0.2, 0.3, 0.4]
-        pos_3 = robot.forward_kinematics(angles_3)
-        print(f"Angles: {angles_3} -> End Effector Position: {pos_3}")
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    while True:
+        try:
+            user_input = input("\nEnter joint angles (j1 j2 j3 j4): ")
+            
+            if user_input.lower() in ['exit', 'quit']:
+                break
+            
+            # Parse input
+            angles = [float(x) for x in user_input.strip().split()]
+            
+            if len(angles) != 4:
+                print("Error: Please enter exactly 4 angles.")
+                continue
+                
+            # Calculate position
+            pos = robot.forward_kinematics(angles)
+            print(f"End Effector Position (x, y, z): {pos}")
+            
+        except ValueError:
+            print("Error: Invalid input. Please enter numbers only.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
